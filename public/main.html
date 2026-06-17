@@ -81,7 +81,8 @@
         margin-right: 30px;
         margin-top: 0px;
         display: flex;
-        gap: 50px;
+        align-items: center;
+        gap: 20px;
         font-size: 16px;
       }
 
@@ -233,41 +234,26 @@
         color: #000000;
       }
 
-      .group-action-popup {
-        display: none;
-        position: absolute;
-        bottom: 45px;
-        right: 15px;
-        width: 140px;
-        background: #ffffff;
-        border: 1px solid #dcdcdc;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        z-index: 999;
-        padding: 8px;
-        flex-direction: column;
-        gap: 6px;
+      /* ➔ 🛠️ 추가된 모임 목록 디자인 커스텀 스타일 */
+      .group-list-container {
+        padding: 15px 20px;
+        overflow-y: auto;
+        flex: 1;
       }
 
-      .popup-btn {
-        width: 100%;
-        height: 36px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #1e73e6;
-        background-color: #ffffff;
-        border: 1px solid #1e73e6;
-        border-radius: 6px;
+      .group-item {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        background-color: #f4f8ff;
+        border: 1px solid #d0e3ff;
+        border-radius: 8px;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
       }
 
-      .popup-btn:hover {
-        background-color: #1e73e6;
-        color: #ffffff;
+      .group-item:hover {
+        background-color: #e1eeff;
+        transform: translateY(-1px);
       }
 
       .content-view {
@@ -372,7 +358,12 @@
             <button type="button" class="popup-btn" id="pop-btn-join">코드 입력하기</button>
           </div>
         </div>
-        <div class="group-list-box" id="main-group-container"></div>
+
+        <div class="group-list-container" id="group-container">
+          <p style="color: #aaa; font-size: 14px; padding: 10px">
+            로그인 후 확인 가능합니다.
+          </p>
+        </div>
       </div>
 
       <div class="content-view">
@@ -458,69 +449,86 @@
         renderTimeline();
       });
 
+      // 로그인 인증 모니터링
       supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
-          signUpWrapper.style.display = "none";
-          signInWrapper.innerHTML = `<a href="#" id="auth-logout-action">로그아웃</a>`;
-          document.getElementById("auth-logout-action").addEventListener("click", async (e) => {
-            e.preventDefault();
-            localStorage.removeItem("finalTimeSlots");
-            localStorage.removeItem("finalTimeUserName");
-            localStorage.removeItem("savedGroupList");
-            await supabase.auth.signOut();
-            window.location.reload();
-          });
+          signUpWrapper.style.display = "none"; // 👈 여기 style. 하나를 지워서 수정!
+          signInWrapper.innerHTML = `<a href="#" id="auth-logout-action" style="color: #ff4d4d;">로그아웃</a>`;
 
-          if (session.user && session.user.user_metadata) {
-            const meta = session.user.user_metadata;
-            currentLoggedInUserDisplayName = meta.id || meta.username || meta.name || meta.nickname || (session.user.email ? session.user.email.split("@")[0] : "user");
-          } else {
-            currentLoggedInUserDisplayName = session.user.email ? session.user.email.split("@")[0] : "user";
-          }
+          document
+            .getElementById("auth-logout-action")
+            .addEventListener("click", async (e) => {
+              e.preventDefault();
+              await supabase.auth.signOut();
+              window.location.reload();
+            });
+
           getGroups();
         } else {
           signUpWrapper.style.display = "block";
           signInWrapper.innerHTML = `<a href="signin.html">로그인</a>`;
-          currentLoggedInUserDisplayName = "";
-          selectedGroupName = "";
-          mainGroupContainer.innerHTML = "";
-          localStorage.removeItem("finalTimeSlots");
-          localStorage.removeItem("finalTimeUserName");
-          localStorage.removeItem("savedGroupList");
+
+          const groupListArea = document.getElementById("group-container");
+          if (groupListArea) {
+            groupListArea.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">로그인 후 확인 가능합니다.</p>`;
+          }
         }
         renderTimeline();
       });
+      // 💾 내 모임 데이터를 Supabase에서 가져와 UI에 꼽아주는 함수
+      async function getGroups() {
+        try {
+          // 1. 로그인 유저 객체 체크
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) return;
 
-      function getGroups() {
-        mainGroupContainer.innerHTML = "";
-        const savedGroups = JSON.parse(localStorage.getItem("savedGroupList")) || [];
-        
-        savedGroups.forEach(gName => {
-          const div = document.createElement("div");
-          div.classList.add("group-item");
-          div.textContent = gName;
-          
-          if (selectedGroupName === gName) {
-            div.classList.add("active");
+          // 2. groups 테이블에서 내가 생성한 방들 긁어오기
+          const { data, error } = await supabase
+            .from("groups")
+            .select("*")
+            .eq("owner_id", user.id); //
+
+          if (error) throw error;
+
+          console.log("내 모임 목록:", data);
+
+          // 3. HTML 영역 매핑
+          const groupListArea = document.getElementById("group-container");
+          if (!groupListArea) return;
+
+          groupListArea.innerHTML = ""; // 기존 글자 비우기
+
+          if (!data || data.length === 0) {
+            groupListArea.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">참여 중인 모임이 없습니다.</p>`;
+            return;
           }
 
-          div.addEventListener("click", () => {
-            const items = mainGroupContainer.querySelectorAll(".group-item");
-            items.forEach(i => i.classList.remove("active"));
-            
-            if (selectedGroupName === gName) {
-              selectedGroupName = ""; 
-            } else {
-              selectedGroupName = gName;
-              div.classList.add("active");
-            }
-            renderTimeline();
-          });
+          // 4. 받아온 배열 루프 돌며 엘리먼트 생성 및 추가
+          data.forEach((group) => {
+            const groupItem = document.createElement("div");
+            groupItem.className = "group-item";
 
-          mainGroupContainer.appendChild(div);
-        });
+            // Supabase의 컬럼명인 group.title 바인딩 처리
+            groupItem.innerHTML = `
+              <div style="font-weight: bold; color: #1e73e6;">${group.title}</div>
+              <div style="font-size: 12px; color: #aaa; margin-top: 4px;">코드: ROOM-${group.id}</div>
+            `;
+
+            // 클릭했을 때 이벤트 연결 구역
+            groupItem.addEventListener("click", () => {
+              alert(`'${group.title}' 모임을 선택하셨습니다.`);
+            });
+
+            groupListArea.appendChild(groupItem);
+          });
+        } catch (err) {
+          console.error("그룹 목록 로드 실패:", err.message);
+        }
       }
 
+      // 캘린더 기본 제어 구역 시작
       let currentDate = new Date();
       const miniMonthTitle = document.getElementById("mini-month-title");
       const miniDatesGrid = document.getElementById("mini-dates-grid");
@@ -712,6 +720,7 @@
         .getElementById("next-week")
         .addEventListener("click", () => moveWeek(1));
 
+      // 첫 로드 시 구동
       syncMainTimeline();
       renderTimeline();
 
