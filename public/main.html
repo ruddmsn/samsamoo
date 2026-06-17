@@ -255,12 +255,10 @@
 
       <div class="week-navigation-bar">
         <div class="week-selector-wrap">
-          <!-- 💡 텍스트 화살표 기호 추가됨 -->
           <button class="arrow-btn" id="prev-week" style="font-size: 26px">
             &lt;
           </button>
           <div class="week-title" id="main-week-title">11월 4주</div>
-          <!-- 💡 텍스트 화살표 기호 추가됨 -->
           <button class="arrow-btn" id="next-week" style="font-size: 26px">
             &gt;
           </button>
@@ -277,10 +275,8 @@
       <div class="sidebar">
         <div class="mini-calendar">
           <div class="mini-cal-header">
-            <!-- 💡 미니 달력 화살표 기호 추가됨 -->
             <button class="arrow-btn" id="prev-mini">&lt;</button>
             <span id="mini-month-title">11월</span>
-            <!-- 💡 미니 달력 화살표 기호 추가됨 -->
             <button class="arrow-btn" id="next-mini">&gt;</button>
           </div>
           <div class="mini-cal-grid" id="mini-dates-grid">
@@ -323,6 +319,24 @@
 
     <script type="module">
       import { supabase } from "/src/supabase.js";
+
+      const signUpWrapper = document.getElementById("signUp");
+      const signInWrapper = document.getElementById("signIn");
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          signUpWrapper.style.display = "none";
+          signInWrapper.innerHTML = `<a href="#" id="auth-logout-action">로그아웃</a>`;
+          document.getElementById("auth-logout-action").addEventListener("click", async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.reload();
+          });
+        } else {
+          signUpWrapper.style.display = "block";
+          signInWrapper.innerHTML = `<a href="signin.html">로그인</a>`;
+        }
+      });
 
       async function getGroups() {
         const { data, error } = await supabase.from("groups").select("*");
@@ -480,7 +494,6 @@
         syncMainTimeline();
       }
 
-      // 💡 달 이동 시 날짜가 꼬이지 않도록 안전하게 수정
       function movePrevMonth() {
         currentDate.setMonth(currentDate.getMonth() - 1);
         syncMainTimeline();
