@@ -330,9 +330,24 @@
             renderTimelineTable();
           });
 
-        // 선택 완료 버튼 클릭 시 브라우저에 저장하고 복귀
-        document.getElementById("save-btn").addEventListener("click", () => {
-          localStorage.setItem("savedTimeSlots", JSON.stringify(selectedSlots));
+        document.getElementById("save-btn").addEventListener("click", async () => {
+          const supabase = window.supabaseInstance;
+          let currentName = "사용자";
+
+          if (supabase) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const uName = user.user_metadata.name || "사용자";
+              const uId = user.email ? user.email.split("@")[0] : "user";
+              currentName = `${uName} @${uId}`;
+            }
+          }
+
+          localStorage.setItem("finalTimeSlots", JSON.stringify(selectedSlots));
+          localStorage.setItem("finalTimeUserName", currentName);
+          localStorage.removeItem("savedTimeSlots");
+          selectedSlots = {};
+          
           alert("가능한 시간대 등록이 모두 완료되었습니다");
           location.href = "main.html";
         });

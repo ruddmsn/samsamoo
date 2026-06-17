@@ -110,7 +110,7 @@
       .back-link:hover {
         text-decoration: underline;
       }
-      #cancel-link {
+      .cancel-link {
         text-decoration: none;
       }
     </style>
@@ -165,7 +165,7 @@
 
       document
         .getElementById("create-btn")
-        .addEventListener("click", async () => {
+        .addEventListener("click", () => {
           const groupName = document.getElementById("group-name").value.trim();
 
           if (!groupName) {
@@ -175,20 +175,15 @@
 
           const roomCode = generateRandomRoomCode();
 
-          const { data, error } = await supabase
-            .from("groups")
-            .insert([{ group_name: groupName, room_code: roomCode }]);
+          const currentGroups = JSON.parse(localStorage.getItem("savedGroupList")) || [];
+          currentGroups.push(groupName);
+          localStorage.setItem("savedGroupList", JSON.stringify(currentGroups));
 
-          if (error) {
-            alert("모임 생성 실패: " + error.message);
-            console.error(error);
-          } else {
-            document.getElementById("group-form").style.display = "none";
-            document.getElementById("cancel-link").style.display = "none";
+          document.getElementById("group-form").style.display = "none";
+          document.getElementById("cancel-link").style.display = "none";
 
-            document.getElementById("generated-code").textContent = roomCode;
-            document.getElementById("result-box").style.display = "block";
-          }
+          document.getElementById("generated-code").textContent = roomCode;
+          document.getElementById("result-box").style.display = "block";
         });
     </script>
   </body>
