@@ -291,9 +291,18 @@
       </div>
     </div>
 
-    <script>
-      let currentDate = new Date();
+    <script type="module">
+      import { supabase } from "./src/supabase.js";
 
+      async function getGroups() {
+        const { data, error } = await supabase.from("groups").select("*");
+
+        console.log(data);
+      }
+
+      getGroups();
+
+      let currentDate = new Date();
       const miniMonthTitle = document.getElementById("mini-month-title");
       const miniDatesGrid = document.getElementById("mini-dates-grid");
       const mainWeekTitle = document.getElementById("main-week-title");
