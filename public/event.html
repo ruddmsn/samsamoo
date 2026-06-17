@@ -212,7 +212,7 @@
       </div>
 
       <div class="btn-group">
-        <a href="main.html" class="btn btn-cancel">취소</a>
+        <a href="#" id="cancel-btn" class="btn btn-cancel">취소</a>
         <button type="button" id="save-btn" class="btn btn-save">
           선택 완료
         </button>
@@ -234,13 +234,19 @@
           currentDate = new Date(passedDateStr);
         }
 
-        const weekTitle = document.getElementById("week-title");
-        const timelineHoursBody = document.getElementById(
-          "timeline-hours-body",
-        );
+        // 취소 버튼을 눌렀을 때 원래 날짜 유지하며 홈 이동 처리
+        const cancelBtn = document.getElementById("cancel-btn");
+        if (passedDateStr) {
+          cancelBtn.href = `main.html?date=${passedDateStr}`;
+        } else {
+          cancelBtn.href = "main.html";
+        }
 
-        let selectedSlots =
-          JSON.parse(localStorage.getItem("savedTimeSlots")) || {};
+        const weekTitle = document.getElementById("week-title");
+        const timelineHoursBody = document.getElementById("timeline-hours-body");
+
+        // [기존 전체 데이터 로드] 신규 등록 시 과거 일정 유지용
+        let selectedSlots = JSON.parse(localStorage.getItem("finalTimeSlots")) || {};
 
         function getWeekOfMonth(date) {
           const firstDayOfMonth = new Date(
@@ -330,27 +336,43 @@
             renderTimelineTable();
           });
 
-        document.getElementById("save-btn").addEventListener("click", async () => {
-          const supabase = window.supabaseInstance;
-          let currentName = "사용자";
+        document
+          .getElementById("save-btn")
+          .addEventListener("click", async () => {
+            const supabase = window.supabaseInstance;
+            let currentName = "사용자";
 
-          if (supabase) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              const uName = user.user_metadata.name || "사용자";
-              const uId = user.email ? user.email.split("@")[0] : "user";
-              currentName = `${uName} @${uId}`;
+            if (supabase) {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+              if (user) {
+                const uName = user.user_metadata.name || "사용자";
+                const uId = user.email ? user.email.split("@")[0] : "user";
+                currentName = `${uName} @${uId}`;
+              }
             }
-          }
 
-          localStorage.setItem("finalTimeSlots", JSON.stringify(selectedSlots));
-          localStorage.setItem("finalTimeUserName", currentName);
-          localStorage.removeItem("savedTimeSlots");
-          selectedSlots = {};
-          
-          alert("가능한 시간대 등록이 모두 완료되었습니다");
-          location.href = "main.html";
-        });
+            // [기존 스케줄 누적 보존 저장]
+            localStorage.setItem(
+              "finalTimeSlots",
+              JSON.stringify(selectedSlots),
+            );
+            localStorage.setItem("finalTimeUserName", currentName);
+            localStorage.removeItem("savedTimeSlots");
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramDate = urlParams.get("date") || "";
+
+            alert("일정이 추가되었습니다.");
+
+            // 원래 보고 있던 날짜 파라미터를 들고 홈 화면 복귀구동
+            if (paramDate) {
+              location.href = `main.html?date=${paramDate}`; 
+            } else {
+              location.href = "main.html";
+            }
+          });
 
         renderTimelineTable();
       });
