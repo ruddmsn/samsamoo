@@ -182,25 +182,31 @@
         position: relative;
       }
 
-      .group-list-container {
+      .group-list-box {
+        width: 100%;
         padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         overflow-y: auto;
-        flex: 1;
       }
 
       .group-item {
-        padding: 12px 15px;
-        margin-bottom: 8px;
-        background-color: #f4f8ff;
-        border: 1px solid #d0e3ff;
+        font-size: 16px;
+        font-weight: 500;
+        color: #444444;
+        padding: 10px 14px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
       }
 
       .group-item:hover {
-        background-color: #e1eeff;
-        transform: translateY(-1px);
+        background-color: #e8f0fe;
+        color: #1e73e6;
+        border-color: #1e73e6;
       }
 
       .group-item.active {
@@ -269,14 +275,15 @@
 
       .content-view {
         flex: 1;
-        display: flex;
-        flex-direction: column;
+        padding: 40px; 
+        overflow-y: auto;
       }
 
-      .timeline-scroll-container {
-        flex: 1;
-        overflow-y: auto;
-        max-height: calc(100vh - 100px);
+      .timetable-wrapper {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        width: 100%;
       }
 
       .timeline-table {
@@ -287,14 +294,13 @@
 
       .timeline-table th,
       .timeline-table td {
-        border: none;
-        box-shadow: 0 0 0 0.5px #e0e0e0;
+        border: 1px solid #e0e0e0;
         text-align: center;
         vertical-align: middle;
       }
 
       .timeline-table thead th {
-        height: 60px;
+        height: 50px;
         background-color: #ffffff;
         font-size: 16px;
         font-weight: 400;
@@ -302,26 +308,27 @@
       }
 
       .timeline-table thead th.empty-corner {
-        width: 10%;
+        width: 12%; 
+        background-color: #ffffff;
       }
 
       .timeline-table td.time-col-cell {
-        font-size: 16px;
-        font-weight: 400;
-        color: #555555;
+        height: 50px;
+        font-size: 14px;
+        color: #777777;
         background-color: #ffffff;
-        width: 10%;
+        width: 12%;
       }
 
       .timeline-table td.sched-cell {
-        height: 60px;
+        height: 50px;
         background-color: #ffffff;
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <a href="event.html" id="event">일정추가</a>
+      <a href="#" id="event">일정추가</a>
 
       <div class="week-navigation-bar">
         <div class="week-selector-wrap">
@@ -369,16 +376,11 @@
             <button type="button" class="popup-btn" id="pop-btn-join">코드 입력하기</button>
           </div>
         </div>
-
-        <div class="group-list-container" id="group-container">
-          <p style="color: #aaa; font-size: 14px; padding: 10px">
-            로그인 후 확인 가능합니다.
-          </p>
-        </div>
+        <div class="group-list-box" id="main-group-container"></div>
       </div>
 
       <div class="content-view">
-        <div class="timeline-scroll-container">
+        <div class="timetable-wrapper">
           <table class="timeline-table">
             <thead>
               <tr>
@@ -404,18 +406,37 @@
 
       const signUpWrapper = document.getElementById("signUp");
       const signInWrapper = document.getElementById("signIn");
-      const groupListArea = document.getElementById("group-container");
+      const mainGroupContainer = document.getElementById("main-group-container");
       
       const addGroupBtn = document.getElementById("add-group-btn");
       const groupActionBox = document.getElementById("group-action-box");
+      const eventBtn = document.getElementById("event");
 
       let currentLoggedInUserDisplayName = "";
       let selectedGroupName = ""; 
 
-      // [핵심 추가] URL 주소창에서 넘어온 날짜 파라미터(?date=YYYY-MM-DD) 추출 로직
       const urlParams = new URLSearchParams(window.location.search);
       const paramDate = urlParams.get("date");
       let currentDate = paramDate ? new Date(paramDate) : new Date();
+
+      eventBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const y = currentDate.getFullYear();
+        const m = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const d = String(currentDate.getDate()).padStart(2, "0");
+        location.href = `event.html?date=${y}-${m}-${d}`;
+      });
+
+      function idToRandomCode(id) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let seed = parseInt(id) * 1234567 + 987654321;
+        let result = "";
+        for (let i = 0; i < 6; i++) {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          result += chars.charAt(seed % chars.length);
+        }
+        return result;
+      }
 
       addGroupBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -433,14 +454,10 @@
       });
 
       document.getElementById("pop-btn-join").addEventListener("click", () => {
-        const code = prompt("전달받은 6자리 참여 코드를 입력하세요:");
-        if (!code) return;
+        const code = prompt("전달받은 참여 코드를 입력하세요 (예: SR0E34):");
+        if (!code || !code.trim()) return;
         
         const cleanCode = code.trim().toUpperCase();
-        if (cleanCode.length !== 6) {
-          alert("유효한 6자리 모임 코드가 아닙니다.");
-          return;
-        }
 
         const targetName = prompt("참가하려는 기존 모임의 정확한 이름을 입력해주세요:");
         if (!targetName || !targetName.trim()) {
@@ -448,8 +465,17 @@
           return;
         }
 
-        selectedGroupName = targetName.trim();
+        const finalTargetName = targetName.trim();
+        
+        const joinedList = JSON.parse(localStorage.getItem("joinedGroupList")) || [];
+        if (!joinedList.some(g => g.title === finalTargetName)) {
+          joinedList.push({ title: finalTargetName, code: cleanCode });
+          localStorage.setItem("joinedGroupList", JSON.stringify(joinedList));
+        }
+
+        selectedGroupName = finalTargetName;
         alert(`'${selectedGroupName}' 모임방에 성공적으로 접속했습니다! 팀원들의 일정을 표시합니다.`);
+        getGroups();
         renderTimeline();
       });
 
@@ -462,6 +488,7 @@
             e.preventDefault();
             localStorage.removeItem("finalTimeSlots");
             localStorage.removeItem("finalTimeUserName");
+            localStorage.removeItem("joinedGroupList");
             await supabase.auth.signOut();
             window.location.reload();
           });
@@ -481,8 +508,9 @@
           selectedGroupName = "";
           localStorage.removeItem("finalTimeSlots");
           localStorage.removeItem("finalTimeUserName");
-          if (groupListArea) {
-            groupListArea.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">로그인 후 확인 가능합니다.</p>`;
+          localStorage.removeItem("joinedGroupList");
+          if (mainGroupContainer) {
+            mainGroupContainer.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">로그인 후 확인 가능합니다.</p>`;
           }
         }
         renderTimeline();
@@ -500,27 +528,41 @@
 
           if (error) throw error;
 
-          if (!groupListArea) return;
-          groupListArea.innerHTML = ""; 
+          if (!mainGroupContainer) return;
+          mainGroupContainer.innerHTML = ""; 
 
-          if (!data || data.length === 0) {
-            groupListArea.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">참여 중인 모임이 없습니다.</p>`;
+          const joinedList = JSON.parse(localStorage.getItem("joinedGroupList")) || [];
+          
+          const myOwnedGroups = (data || []).map(g => ({
+            title: g.group_name || g.title || "이름 없는 모임",
+            code: idToRandomCode(g.id)
+          }));
+
+          const finalCombinedList = [...myOwnedGroups];
+          joinedList.forEach(jg => {
+            if (!finalCombinedList.some(g => g.title === jg.title)) {
+              finalCombinedList.push(jg);
+            }
+          });
+
+          if (finalCombinedList.length === 0) {
+            mainGroupContainer.innerHTML = `<p style="color: #aaa; font-size: 14px; padding: 10px;">참여 중인 모임이 없습니다.</p>`;
             return;
           }
 
-          data.forEach((group) => {
-            const groupItem = document.createElement("div");
-            groupItem.className = "group-item";
+          finalCombinedList.forEach((group) => {
+            const div = document.createElement("div");
+            div.className = "group-item";
             if (selectedGroupName === group.title) {
-              groupItem.classList.add("active");
+              div.classList.add("active");
             }
 
-            groupItem.innerHTML = `
+            div.innerHTML = `
               <div style="font-weight: bold; color: #1e73e6;">${group.title}</div>
-              <div style="font-size: 12px; color: #aaa; margin-top: 4px;">코드: ROOM-${group.id}</div>
+              <div style="font-size: 12px; color: #aaa; margin-top: 4px;">코드: ${group.code}</div>
             `;
 
-            groupItem.addEventListener("click", () => {
+            div.addEventListener("click", () => {
               if (selectedGroupName === group.title) {
                 selectedGroupName = "";
               } else {
@@ -530,7 +572,7 @@
               renderTimeline();
             });
 
-            groupListArea.appendChild(groupItem);
+            mainGroupContainer.appendChild(div);
           });
         } catch (err) {
           console.error("그룹 목록 로드 실패:", err.message);
@@ -567,7 +609,7 @@
 
           const tdTime = document.createElement("td");
           tdTime.classList.add("time-col-cell");
-          tdTime.textContent = String(hour).padStart(2, "0");
+          tdTime.textContent = `${String(hour).padStart(2, "0")}:00`;
           tr.appendChild(tdTime);
 
           for (let day = 0; day < 7; day++) {
@@ -579,15 +621,6 @@
 
             if (savedSlots[slotKey]) {
               cellNames.push(savedUserName);
-            }
-
-            if (selectedGroupName) {
-              if ((day === 1 || day === 3) && (hour >= 10 && hour <= 12)) {
-                cellNames.push("김철수");
-              }
-              if ((day === 2 || day === 4) && (hour >= 14 && hour <= 16)) {
-                cellNames.push("이영희");
-              }
             }
 
             if (cellNames.length > 0) {
@@ -611,7 +644,6 @@
 
       function updateWeekDaysHeaders(selectedDate) {
         const currentDayOfWeek = selectedDate.getDay();
-
         const sundayDate = new Date(selectedDate);
         sundayDate.setDate(selectedDate.getDate() - currentDayOfWeek);
 
@@ -621,6 +653,7 @@
 
           const targetHeader = document.getElementById(`day-${i}`);
           if (targetHeader) {
+            // ➔ 🛠️ 요일과 괄호를 전부 제거하고 오직 순수 날짜 숫자만 나오게 매핑 변경
             targetHeader.textContent = loopDate.getDate();
           }
         }
@@ -728,16 +761,6 @@
         .addEventListener("click", () => moveWeek(1));
 
       syncMainTimeline();
-      renderTimeline();
-
-      document.getElementById("event").addEventListener("click", function (e) {
-        e.preventDefault();
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-        const date = String(currentDate.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${date}`;
-        location.href = `event.html?date=${dateStr}`;
-      });
     </script>
   </body>
 </html>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>가능한 시간 선택</title>
+    <title>삼삼오오 - 일정 추가</title>
     <style>
       * {
         margin: 0;
@@ -17,365 +17,320 @@
         background-color: #ffffff;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        padding: 40px;
       }
 
-      .full-wrapper {
+      .header {
+        display: flex;
+        align-items: center;
         width: 100%;
-        max-width: 900px;
+        height: 100px;
+        padding: 0 40px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e73e6;
+      }
+
+      .main-container {
+        display: flex;
+        flex: 1;
+      }
+
+      .sidebar {
+        width: 280px;
+        border-right: 1px solid #e0e0e0;
+        padding: 30px 20px;
         display: flex;
         flex-direction: column;
         gap: 24px;
       }
 
-      h2 {
-        font-size: 28px;
-        font-weight: 700;
+      .info-box {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .info-box h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
         color: #333;
-        text-align: center;
-        margin-bottom: 5px;
       }
 
-      p.sub-title {
-        text-align: center;
+      .info-box p {
+        font-size: 14px;
         color: #666;
-        font-size: 15px;
-        margin-bottom: 15px;
+        line-height: 1.5;
       }
 
-      .calendar-box {
+      .btn-submit {
         width: 100%;
-        background-color: #ffffff;
-      }
-
-      .cal-header {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 50px;
-        margin-bottom: 25px;
-      }
-
-      .cal-header span {
-        font-size: 24px;
+        height: 50px;
+        background-color: #1e73e6;
+        color: white;
+        font-size: 16px;
         font-weight: bold;
-        color: #000;
-      }
-
-      .arrow-btn {
-        background: none;
         border: none;
-        font-size: 24px;
+        border-radius: 8px;
         cursor: pointer;
-        color: #000;
-        padding: 0 10px;
-        outline: none;
+        transition: background-color 0.2s;
       }
 
-      .timeline-scroll-container {
-        width: 100%;
-        max-height: 60vh;
+      .btn-submit:hover {
+        background-color: #1a62cc;
+      }
+
+      .content-view {
+        flex: 1;
+        padding: 40px;
         overflow-y: auto;
+      }
+
+      .week-title-area {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 25px;
+        color: #222;
+      }
+
+      .timetable-wrapper {
         border: 1px solid #e0e0e0;
         border-radius: 12px;
+        overflow: hidden;
       }
 
-      .timeline-table {
+      .time-table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed;
-        background-color: #fff;
+        user-select: none;
       }
 
-      .timeline-table th,
-      .timeline-table td {
-        border: none;
-        box-shadow: 0 0 0 0.5px #e0e0e0;
+      .time-table th,
+      .time-table td {
+        border: 1px solid #e0e0e0;
         text-align: center;
         vertical-align: middle;
       }
 
-      .timeline-table thead th {
+      .time-table th {
         height: 50px;
         background-color: #ffffff;
-        font-size: 15px;
-        font-weight: 500;
+        font-size: 16px;
+        font-weight: 400;
         color: #333333;
       }
 
-      .timeline-table thead th:nth-child(2),
-      .timeline-table thead th:nth-child(8) {
-        color: #9e9e9e;
-      }
-
-      .timeline-table thead th.empty-corner {
-        width: 10%;
-      }
-
-      .timeline-table td.time-col-cell {
-        font-size: 14px;
-        font-weight: 400;
-        color: #555555;
+      .time-table th.time-corner {
+        width: 12%;
         background-color: #ffffff;
-        width: 10%;
-        height: 50px;
       }
 
-      .timeline-table td.sched-cell {
+      .time-table td.time-label {
         height: 50px;
+        font-size: 14px;
+        color: #777;
+        background-color: #ffffff;
+      }
+
+      .time-table td.slot-cell {
         cursor: pointer;
+        background-color: #ffffff;
         transition: background-color 0.1s;
       }
 
-      .timeline-table td.sched-cell:hover {
-        background-color: #f1f3f4;
-      }
-
-      .timeline-table td.sched-cell.selected {
-        background-color: rgba(30, 115, 230, 0.7) !important;
-      }
-
-      .btn-group {
-        display: flex;
-        gap: 16px;
-        justify-content: center;
-        margin-top: 15px;
-      }
-
-      .btn {
-        width: 150px;
-        height: 50px;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-      }
-
-      .btn-cancel {
-        background-color: #f5f5f5;
-        color: #555;
-      }
-      .btn-cancel:hover {
-        background-color: #e5e5e5;
-      }
-
-      .btn-save {
-        background-color: #1e73e6;
-        color: #fff;
-      }
-      .btn-save:hover {
-        background-color: #004fb0;
+      .time-table td.slot-cell.selected {
+        background-color: #a4cafe !important;
       }
     </style>
   </head>
   <body>
-    <div class="full-wrapper">
-      <h2>일정 추가</h2>
-      <p class="sub-title">
-        내가 만날 수 있는 요일과 시간 칸들을 클릭하여 등록해 주세요.
-      </p>
+    <div class="header">
+      <h1>일정 추가</h1>
+    </div>
 
-      <div class="calendar-box">
-        <div class="cal-header">
-          <button type="button" class="arrow-btn" id="prev-week-btn">
-            &lt;
-          </button>
-          <span id="week-title">-월 -주</span>
-          <button type="button" class="arrow-btn" id="next-week-btn">
-            &gt;
-          </button>
+    <div class="main-container">
+      <div class="sidebar">
+        <div class="info-box">
+          <h3>드래그 안내</h3>
+          <p>원하는 시간대 칸들을 마우스로 클릭하거나 아래로 드래그하여 다중 선택할 수 있습니다.</p>
         </div>
-
-        <div class="timeline-scroll-container">
-          <table class="timeline-table">
-            <thead>
-              <tr>
-                <th class="empty-corner"></th>
-                <th id="day-0">일</th>
-                <th id="day-1">월</th>
-                <th id="day-2">화</th>
-                <th id="day-3">수</th>
-                <th id="day-4">목</th>
-                <th id="day-5">금</th>
-                <th id="day-6">토</th>
-              </tr>
-            </thead>
-            <tbody id="timeline-hours-body"></tbody>
-          </table>
-        </div>
+        <button class="btn-submit" id="save-schedule-btn">선택 완료 및 저장</button>
       </div>
 
-      <div class="btn-group">
-        <a href="#" id="cancel-btn" class="btn btn-cancel">취소</a>
-        <button type="button" id="save-btn" class="btn btn-save">
-          선택 완료
-        </button>
+      <div class="content-view">
+        <div class="week-title-area" id="event-week-title">선택한 주간 드래그하기</div>
+        <div class="timetable-wrapper">
+          <table class="time-table">
+            <thead>
+              <tr>
+                <th class="time-corner"></th>
+                <th id="col-day-0">-</th>
+                <th id="col-day-1">-</th>
+                <th id="col-day-2">-</th>
+                <th id="col-day-3">-</th>
+                <th id="col-day-4">-</th>
+                <th id="col-day-5">-</th>
+                <th id="col-day-6">-</th>
+              </tr>
+            </thead>
+            <tbody id="event-hours-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <script type="module">
       import { supabase } from "/src/supabase.js";
-      window.supabaseInstance = supabase;
-    </script>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const passedDateStr = urlParams.get("date");
+      const eventWeekTitle = document.getElementById("event-week-title");
+      const eventHoursBody = document.getElementById("event-hours-body");
+      const saveScheduleBtn = document.getElementById("save-schedule-btn");
 
-        let currentDate = new Date();
-        if (passedDateStr && !isNaN(Date.parse(passedDateStr))) {
-          currentDate = new Date(passedDateStr);
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramDate = urlParams.get("date");
+      let baseDate = paramDate ? new Date(paramDate) : new Date();
+
+      let tempSelectedSlots = {}; 
+      let isDragging = false;
+      let currentLoggedInUser = "user";
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session && session.user) {
+          const meta = session.user.user_metadata;
+          currentLoggedInUser = meta?.username || meta?.id || meta?.name || (session.user.email ? session.user.email.split("@")[0] : "user");
         }
-
-        // 취소 버튼을 눌렀을 때 원래 날짜 유지하며 홈 이동 처리
-        const cancelBtn = document.getElementById("cancel-btn");
-        if (passedDateStr) {
-          cancelBtn.href = `main.html?date=${passedDateStr}`;
-        } else {
-          cancelBtn.href = "main.html";
-        }
-
-        const weekTitle = document.getElementById("week-title");
-        const timelineHoursBody = document.getElementById("timeline-hours-body");
-
-        // [기존 전체 데이터 로드] 신규 등록 시 과거 일정 유지용
-        let selectedSlots = JSON.parse(localStorage.getItem("finalTimeSlots")) || {};
-
-        function getWeekOfMonth(date) {
-          const firstDayOfMonth = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            1,
-          );
-          const startDay = firstDayOfMonth.getDay();
-          const currentDay = date.getDate();
-          return Math.ceil((currentDay + startDay) / 7);
-        }
-
-        function renderTimelineTable() {
-          timelineHoursBody.innerHTML = "";
-
-          const weekNum = getWeekOfMonth(currentDate);
-          weekTitle.textContent = `${currentDate.getMonth() + 1}월 ${weekNum}주`;
-
-          const currentDayOfWeek = currentDate.getDay();
-          const sundayDate = new Date(currentDate);
-          sundayDate.setDate(currentDate.getDate() - currentDayOfWeek);
-
-          const weekDatesStrs = [];
-          for (let i = 0; i < 7; i++) {
-            const loopDate = new Date(sundayDate);
-            loopDate.setDate(sundayDate.getDate() + i);
-            const y = loopDate.getFullYear();
-            const m = String(loopDate.getMonth() + 1).padStart(2, "0");
-            const d = String(loopDate.getDate()).padStart(2, "0");
-            weekDatesStrs.push(`${y}-${m}-${d}`);
-
-            const headerCell = document.getElementById(`day-${i}`);
-            const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
-            if (headerCell) {
-              headerCell.innerHTML = `${dayNames[i]}<br><span style="font-size:12px; font-weight:normal; color:#767676;">${loopDate.getDate()}일</span>`;
-            }
-          }
-
-          for (let hour = 0; hour <= 24; hour++) {
-            const tr = document.createElement("tr");
-
-            const tdTime = document.createElement("td");
-            tdTime.classList.add("time-col-cell");
-            tdTime.textContent = String(hour).padStart(2, "0");
-            tr.appendChild(tdTime);
-
-            for (let day = 0; day < 7; day++) {
-              const tdSched = document.createElement("td");
-              tdSched.classList.add("sched-cell");
-
-              const slotKey = `${weekDatesStrs[day]}_${hour}`;
-
-              if (selectedSlots[slotKey]) {
-                tdSched.classList.add("selected");
-              }
-
-              tdSched.addEventListener("click", () => {
-                if (tdSched.classList.contains("selected")) {
-                  tdSched.classList.remove("selected");
-                  delete selectedSlots[slotKey];
-                } else {
-                  tdSched.classList.add("selected");
-                  selectedSlots[slotKey] = true;
-                }
-              });
-
-              tr.appendChild(tdSched);
-            }
-
-            timelineHoursBody.appendChild(tr);
-          }
-        }
-
-        document
-          .getElementById("prev-week-btn")
-          .addEventListener("click", (e) => {
-            e.preventDefault();
-            currentDate.setDate(currentDate.getDate() - 7);
-            renderTimelineTable();
-          });
-
-        document
-          .getElementById("next-week-btn")
-          .addEventListener("click", (e) => {
-            e.preventDefault();
-            currentDate.setDate(currentDate.getDate() + 7);
-            renderTimelineTable();
-          });
-
-        document
-          .getElementById("save-btn")
-          .addEventListener("click", async () => {
-            const supabase = window.supabaseInstance;
-            let currentName = "사용자";
-
-            if (supabase) {
-              const {
-                data: { user },
-              } = await supabase.auth.getUser();
-              if (user) {
-                const uName = user.user_metadata.name || "사용자";
-                const uId = user.email ? user.email.split("@")[0] : "user";
-                currentName = `${uName} @${uId}`;
-              }
-            }
-
-            // [기존 스케줄 누적 보존 저장]
-            localStorage.setItem(
-              "finalTimeSlots",
-              JSON.stringify(selectedSlots),
-            );
-            localStorage.setItem("finalTimeUserName", currentName);
-            localStorage.removeItem("savedTimeSlots");
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const paramDate = urlParams.get("date") || "";
-
-            alert("일정이 추가되었습니다.");
-
-            // 원래 보고 있던 날짜 파라미터를 들고 홈 화면 복귀구동
-            if (paramDate) {
-              location.href = `main.html?date=${paramDate}`; 
-            } else {
-              location.href = "main.html";
-            }
-          });
-
-        renderTimelineTable();
       });
+
+      function getWeekOfMonth(date) {
+        const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        const startDay = firstDayOfMonth.getDay();
+        return Math.ceil((date.getDate() + startDay) / 7);
+      }
+
+      function initEventPage() {
+        const month = baseDate.getMonth() + 1;
+        const weekNum = getWeekOfMonth(baseDate);
+        eventWeekTitle.textContent = `${month}월 ${weekNum}주`;
+
+        const currentDayOfWeek = baseDate.getDay();
+        const sundayDate = new Date(baseDate);
+        sundayDate.setDate(baseDate.getDate() - currentDayOfWeek);
+
+        const weekDates = [];
+        for (let i = 0; i < 7; i++) {
+          const loopDate = new Date(sundayDate);
+          loopDate.setDate(sundayDate.getDate() + i);
+          const y = loopDate.getFullYear();
+          const m = String(loopDate.getMonth() + 1).padStart(2, "0");
+          const d = String(loopDate.getDate()).padStart(2, "0");
+          
+          weekDates.push(`${y}-${m}-${d}`);
+
+          const colHeader = document.getElementById(`col-day-${i}`);
+          if (colHeader) {
+            colHeader.textContent = loopDate.getDate();
+          }
+        }
+
+        eventHoursBody.innerHTML = "";
+
+        const savedSlots = JSON.parse(localStorage.getItem("finalTimeSlots")) || {};
+
+        for (let hour = 0; hour <= 24; hour++) {
+          const tr = document.createElement("tr");
+
+          const tdTime = document.createElement("td");
+          tdTime.classList.add("time-label");
+          tdTime.textContent = `${String(hour).padStart(2, "0")}:00`;
+          tr.appendChild(tdTime);
+
+          for (let day = 0; day < 7; day++) {
+            const tdSlot = document.createElement("td");
+            tdSlot.classList.add("slot-cell");
+            
+            const slotKey = `${weekDates[day]}_${hour}`;
+
+            if (savedSlots[slotKey]) {
+              tdSlot.classList.add("selected");
+              tempSelectedSlots[slotKey] = true;
+            }
+
+            tdSlot.setAttribute("data-key", slotKey);
+
+            tdSlot.addEventListener("mousedown", () => {
+              isDragging = true;
+              toggleSlot(tdSlot, slotKey);
+            });
+
+            tdSlot.addEventListener("mouseenter", () => {
+              if (isDragging) {
+                toggleSlot(tdSlot, slotKey);
+              }
+            });
+
+            tr.appendChild(tdSlot);
+          }
+          eventHoursBody.appendChild(tr);
+        }
+      }
+
+      function toggleSlot(element, key) {
+        if (tempSelectedSlots[key]) {
+          delete tempSelectedSlots[key];
+          element.classList.remove("selected");
+        } else {
+          tempSelectedSlots[key] = true;
+          element.classList.add("selected");
+        }
+      }
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      saveScheduleBtn.addEventListener("click", () => {
+        const savedGlobalSlots = JSON.parse(localStorage.getItem("finalTimeSlots")) || {};
+        
+        const currentDayOfWeek = baseDate.getDay();
+        const sundayDate = new Date(baseDate);
+        sundayDate.setDate(baseDate.getDate() - currentDayOfWeek);
+        const activeWeekDates = [];
+        for (let i = 0; i < 7; i++) {
+          const loopDate = new Date(sundayDate);
+          loopDate.setDate(sundayDate.getDate() + i);
+          const y = loopDate.getFullYear();
+          const m = String(loopDate.getMonth() + 1).padStart(2, "0");
+          const d = String(loopDate.getDate()).padStart(2, "0");
+          activeWeekDates.push(`${y}-${m}-${d}`);
+        }
+
+        for (const key in savedGlobalSlots) {
+          const datePart = key.split("_")[0];
+          if (activeWeekDates.includes(datePart)) {
+            delete savedGlobalSlots[key];
+          }
+        }
+
+        for (const key in tempSelectedSlots) {
+          savedGlobalSlots[key] = true;
+        }
+
+        localStorage.setItem("finalTimeSlots", JSON.stringify(savedGlobalSlots));
+        localStorage.setItem("finalTimeUserName", currentLoggedInUser);
+
+        alert("일정이 완벽하게 반영되었습니다!");
+
+        const y = baseDate.getFullYear();
+        const m = String(baseDate.getMonth() + 1).padStart(2, "0");
+        const d = String(baseDate.getDate()).padStart(2, "0");
+        location.href = `main.html?date=${y}-${m}-${d}`;
+      });
+
+      initEventPage();
     </script>
   </body>
 </html>

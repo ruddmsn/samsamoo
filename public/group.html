@@ -153,59 +153,61 @@
     <script type="module">
       import { supabase } from "/src/supabase.js";
 
-      // 1. 버튼 클릭 이벤트 리스너 등록
+      function idToRandomCode(id) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let seed = parseInt(id) * 1234567 + 987654321;
+        let result = "";
+        for (let i = 0; i < 6; i++) {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          result += chars.charAt(seed % chars.length);
+        }
+        return result;
+      }
+
       document
         .getElementById("create-btn")
         .addEventListener("click", async (e) => {
-          e.preventDefault(); // 폼 제출로 인한 새로고침 방지
+          e.preventDefault();
 
           const groupName = document.getElementById("group-name").value.trim();
 
-          // 모임 이름 빈값 체크
           if (!groupName) {
             alert("모임 이름을 입력해 주세요");
             return;
           }
 
           try {
-            // 2. 🔑 현재 로그인한 유저 정보 가져오기 (owner_id에 넣을 값)
             const {
               data: { user },
               error: userError,
             } = await supabase.auth.getUser();
 
             if (userError || !user) {
-              alert(
-                "로그인 세션이 만료되었거나 정보가 없습니다. 다시 로그인 해주세요.",
-              );
+              alert("로그인 세션이 만료되었거나 정보가 없습니다. 다시 로그인 해주세요.");
               window.location.href = "signin.html";
               return;
             }
 
-            // 3. 💾 실제 Supabase 'groups' 테이블에 들어있는 컬럼에만 맞춰서 insert
-            // (주의: room_code 컬럼이 테이블에 없으므로 일단 제외하고 실제 있는 컬럼만 채웁니다)
             const { data, error } = await supabase
               .from("groups")
               .insert([
                 {
-                  title: groupName, // 모임 이름
-                  owner_id: user.id, // 현재 로그인한 사람의 UUID
-                  meeting_date: new Date(), // 모임 생성 날짜 (오늘 날짜 기본 주입)
+                  title: groupName,
+                  owner_id: user.id,
+                  meeting_date: new Date(),
                 },
               ])
-              .select(); // insert 후 결과 데이터를 받아오기 위해 필수
+              .select();
 
             if (error) throw error;
 
-            // 4. 🎉 성공 시 UI 변경
-            // (room_code 컬럼 대신 자동 생성된 고유 id 숫자를 화면에 대신 띄워 친구들에게 공유할 수 있게 처리)
-            const generatedId = data && data[0] ? data[0].id : "SUCCESS";
+            const generatedId = data && data[0] ? data[0].id : 0;
+            const randomCode = idToRandomCode(generatedId);
 
             document.getElementById("group-form").style.display = "none";
             document.getElementById("cancel-link").style.display = "none";
 
-            document.getElementById("generated-code").textContent =
-              `ROOM-${generatedId}`;
+            document.getElementById("generated-code").textContent = randomCode;
             document.getElementById("result-box").style.display = "block";
           } catch (err) {
             alert("모임 생성 실패: " + err.message);
